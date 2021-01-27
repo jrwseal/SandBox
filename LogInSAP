@@ -1,0 +1,112 @@
+Sub LogInSAP()
+'Declare variables
+    Dim SAPApp As Object
+    Dim SAPConn As Object
+    Dim SAPSession As Object
+    Dim SapGuiAuto As Object
+    Dim userName As String
+    Dim password As String
+    
+    'Gather login information from login form
+    userName = Userform1.txtUsername.Text
+    password = Userform1.txtPassword.Text
+    
+    'close userform
+    Unload Userform1
+    If userName = "" Then
+        MsgBox ("Username required"), vbCritical
+        Exit Sub
+    End If
+    
+    If password = "" Then
+        MsgBox ("Password required"), vbCritical
+        Exit Sub
+    End If
+    
+'----------------------------------------------------
+    'Disable pop-up alerts
+    Application.DisplayAlerts = False
+    Dim strMessageText As String
+    
+    
+    'Disable pop-up alerts
+    Application.DisplayAlerts = False
+    
+    'Bind objects
+    Set SapGuiAuto = GetObject("SAPGUI")
+    Set SAPApp = SapGuiAuto.GetScriptingEngine
+    
+    'Enable full error checking
+    On Error GoTo 0  
+    
+    'Set SAPConn and session
+    Set SAPConn = SAPApp.OpenConnection("......Enter Your Module Name......", True)
+    Set SAPSession = SAPConn.Children(0)
+    
+    '------------------------------------------------------------------------------------
+    ' LOGIN
+    '------------------------------------------------------------------------------------
+    
+    SAPSession.findById("wnd[0]/usr/txtRSYST-BNAME").Text = userName
+    SAPSession.findById("wnd[0]/usr/pwdRSYST-BCODE").Text = password
+    SAPSession.findById("wnd[0]").sendVKey 0
+    
+    'Remove login credentials after login
+    userName = ""
+    password = ""
+
+    'Handle login errors
+    If SAPSession.findById("wnd[0]/sbar").MessageType = "E" Then
+    
+        'Set message string
+        strMessageText = SAPSession.findById("wnd[0]/sbar").Text
+        
+        'Close SAPSession
+        SAPSession.findById("wnd[0]/tbar[0]/okcd").Text = "/i"
+        SAPSession.findById("wnd[0]").sendVKey 0
+        
+        'Display error from status bar
+        Call MsgBox(strMessageText, vbOKOnly, "SAP Error")
+        
+        GoTo End_Of_Transaction
+        
+    ElseIf SAPSession.findById("wnd[0]/sbar").MessageType = "W" Then
+    
+        'Set message string
+        strMessageText = SAPSession.findById("wnd[0]/sbar").Text
+        
+        'Close SAPSession
+        SAPSession.findById("wnd[0]/tbar[0]/okcd").Text = "/i"
+        SAPSession.findById("wnd[0]").sendVKey 0
+        
+        'Display error from status bar
+        Call MsgBox(strMessageText, vbOKOnly, "SAP Warning")
+        
+        GoTo End_Of_Transaction
+    
+    Else
+    
+        'Login was valid so handle potential pop-up window warning of multiple logins
+        If SAPSession.Children.Count > 1 Then
+            SAPSession.findById("wnd[1]/usr/radMULTI_LOGON_OPT2").Select
+            SAPSession.findById("wnd[1]/usr/radMULTI_LOGON_OPT2").SetFocus
+            SAPSession.findById("wnd[1]/tbar[0]/btn[0]").press
+        End If
+            
+    End If
+    
+End_Of_Transaction:
+     'Close SAPSession
+    SAPSession.findById("wnd[0]/tbar[0]/okcd").Text = "/i"
+    SAPSession.findById("wnd[0]").sendVKey 0
+    SAPSession.findById("wnd[1]/usr/btnSPOP-OPTION1").press
+
+     'cleanup
+    Set SapGuiAuto = Nothing
+    Set SAPApp = Nothing
+    Set SAPConn = Nothing
+    Set SAPSession = Nothing
+    
+    MsgBox "Completed"
+        
+End Sub
