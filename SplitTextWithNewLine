@@ -1,0 +1,94 @@
+Sub AutosplitText()
+
+    Dim r As Integer
+    
+    Sheet5.Select
+    For r = 2 To WorksheetFunction.CountA(Sheet2.Range("AN:AN"))
+        Sheet5.Range("A" & r) = Sheet2.Range("AN" & r)
+        Sheet5.Range("J" & r) = Sheet2.Range("C" & r)
+        Call splitText
+        Range("A1").Select
+        
+    Next r
+    
+    Call TransferText
+    Sheet6.Select
+    Call AutoTextToColumn
+    
+End Sub
+
+Sub splitText()
+ 
+    Dim splitVals As Variant
+    Dim totalVals As Long
+    Dim i As Integer
+ 
+    For i = 1 To WorksheetFunction.CountA(Sheet2.Range("AN:AN"))
+      splitVals = Split(ActiveCell.Value, Chr(10))
+      totalVals = UBound(splitVals)
+      Range(Cells(ActiveCell.Row, ActiveCell.Column + 1), Cells(ActiveCell.Row, ActiveCell.Column + 1 + totalVals)).Value = splitVals
+      ActiveCell.Offset(1, 0).Activate
+    Next i
+    
+End Sub
+
+Sub TransferText()
+
+    Dim cx As Integer
+    Dim rx As Integer
+    Dim rn As Integer
+    
+    rn = 2
+    
+    For rx = 2 To WorksheetFunction.CountA(Sheet2.Range("AN:AN"))
+        For cx = 3 To 6
+            If Sheet5.Cells(rx, cx) <> "" Then
+                Sheet6.Range("A" & rn) = Sheet5.Cells(rx, cx)
+                Sheet6.Range("L" & rn) = Sheet5.Cells(rx, 10)
+                rn = rn + 1
+            Else
+            End If
+        Next cx
+    Next rx
+    
+End Sub
+
+Sub AutoTextToColumn()
+
+    Range("A2").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Replace What:=" | ", Replacement:="|", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False, FormulaVersion:=xlReplaceFormula2
+    ActiveWindow.SmallScroll Down:=-21
+    Application.CutCopyMode = False
+    Selection.TextToColumns Destination:=Range("B2"), DataType:=xlDelimited, _
+        TextQualifier:=xlDoubleQuote, ConsecutiveDelimiter:=False, Tab:=False, _
+        Semicolon:=False, Comma:=False, Space:=False, Other:=True, OtherChar _
+        :="|", FieldInfo:=Array(Array(1, 1), Array(2, 1), Array(3, 1), Array(4, 1), Array(5, _
+        1), Array(6, 1), Array(7, 1), Array(8, 1), Array(9, 1), Array(10, 1)), _
+        TrailingMinusNumbers:=True
+
+End Sub
+
+Sub FindInvoice()
+
+    Dim rs As Integer
+    Dim rl As Integer
+    
+    Sheet6.Select
+    
+    For rl = 2 To WorksheetFunction.CountA(Sheet2.Range("AN:AN"))
+        For rs = 2 To WorksheetFunction.CountA(Sheet2.Range("AN:AN"))
+            Dim result As String
+            result = WorksheetFunction.Search(Sheet6.Range("B" & rl), Sheet2.Range("AN" & rs))
+            If result <> Error Then
+                Sheet6.Range("L" & rl) = Sheet2.Range("C" & rs)
+                
+            Else
+            End If
+        Next rs
+    Next rl
+
+End Sub
+
